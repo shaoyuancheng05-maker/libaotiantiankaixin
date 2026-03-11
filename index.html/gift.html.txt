@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>坏心情消灭大作战</title>
+<style>
+  body { margin: 0; overflow: hidden; background-color: #fce4ec; font-family: sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #game-container { position: relative; width: 100vw; height: 100vh; }
+  .bad-mood {
+    position: absolute; width: 65px; height: 65px; background-color: #546e7a; color: white; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 15px; cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: fall linear forwards;
+  }
+  @keyframes fall { to { transform: translateY(110vh); } }
+  .emoji-burst { position: absolute; font-size: 28px; animation: floatUp 0.8s ease-out forwards; pointer-events: none; z-index: 5; }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-50px) scale(1.5); opacity: 0; } }
+  #score-board { position: absolute; top: 20px; left: 20px; font-size: 18px; color: #880e4f; font-weight: bold; z-index: 10; background: rgba(255,255,255,0.7); padding: 5px 15px; border-radius: 20px; }
+  #win-screen {
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255, 240, 245, 0.95);
+    display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; text-align: center; padding: 20px; box-sizing: border-box;
+  }
+  #win-screen h1 { color: #d81b60; margin-bottom: 15px; font-size: 28px; }
+  #win-screen p { color: #555; font-size: 18px; line-height: 1.8; margin: 0 20px; }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="score-board">已消灭: <span id="score">0</span> / 15</div>
+</div>
+
+<div id="win-screen">
+  <h1>🎉 坏心情清理完毕！ 🎉</h1>
+  <p>俐宝，无论遇到什么烦心事，<br>我都会帮你一起消灭它们！<br>现在，请接收我的超级大抱抱吧！❤️</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+  // 掉落的负面情绪词汇，你也可以自己增加
+  const words = ["压力", "烦躁", "委屈", "疲惫", "焦虑", "生气", "emo"];
+  const container = document.getElementById('game-container');
+  const scoreEl = document.getElementById('score');
+  const winScreen = document.getElementById('win-screen');
+  let score = 0;
+  const targetScore = 15; // 点击15次即可通关
+  let spawnInterval;
+
+  function spawnBadMood() {
+    const el = document.createElement('div');
+    el.className = 'bad-mood';
+    el.innerText = words[Math.floor(Math.random() * words.length)];
+    // 随机水平位置，避免超出屏幕边缘
+    el.style.left = Math.random() * (window.innerWidth - 70) + 'px';
+    el.style.top = '-70px';
+    
+    // 下落速度在 3 到 5 秒之间随机
+    const duration = Math.random() * 2 + 3; 
+    el.style.animationDuration = duration + 's';
+
+    // 点击事件
+    el.ontouchstart = el.onmousedown = function(e) {
+      e.preventDefault(); // 防止手机端双击放大
+      burst(el.offsetLeft, el.offsetTop); // 触发爱心特效
+      el.remove(); // 移除方块
+      score++;
+      scoreEl.innerText = score;
+      if(score >= targetScore) { win(); }
+    };
+
+    container.appendChild(el);
+    // 掉出屏幕后自动清理DOM
+    setTimeout(() => { if (el.parentElement) el.remove(); }, duration * 1000);
+  }
+
+  function burst(x, y) {
+    const emojis = ['🌸', '❤️', '✨', '😘'];
+    const burstEl = document.createElement('div');
+    burstEl.className = 'emoji-burst';
+    burstEl.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+    burstEl.style.left = (x + 20) + 'px';
+    burstEl.style.top = y + 'px';
+    container.appendChild(burstEl);
+    setTimeout(() => burstEl.remove(), 800);
+  }
+
+  function win() {
+    clearInterval(spawnInterval); // 停止掉落
+    container.innerHTML = ''; // 清空画面剩余方块
+    winScreen.style.display = 'flex'; // 显示表白页面
+    
+    // 触发两侧持续撒花特效
+    var duration = 4 * 1000;
+    var end = Date.now() + duration;
+    (function frame() {
+      confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ffb6c1', '#ff69b4', '#ff1493', '#fff'] });
+      confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ffb6c1', '#ff69b4', '#ff1493', '#fff'] });
+      if (Date.now() < end) { requestAnimationFrame(frame); }
+    }());
+  }
+
+  // 每 0.7 秒掉落一个
+  spawnInterval = setInterval(spawnBadMood, 700);
+</script>
+</body>
+</html>
